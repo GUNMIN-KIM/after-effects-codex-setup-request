@@ -1,0 +1,682 @@
+내 Windows PC에서 Adobe After Effects를 Codex가 직접 제어할 수 있는 작업 환경을 완전히 세팅해줘.
+
+터미널 작업, GitHub clone, dependency 설치, build, After Effects bridge 설치, Codex MCP 등록, 설정 파일 작성, 테스트 준비까지 가능한 것은 전부 네가 직접 실행해.
+
+나에게 터미널 명령어를 복사해서 실행하라고 시키지 마.
+네가 터미널을 직접 사용해서 처리해.
+
+PRIMARY AFTER EFFECTS MCP:
+
+https://github.com/a-y-ibrahim/after-effects-mcp
+
+
+==================================================
+최종 목표
+==================================================
+
+최종적으로 나는 앞으로:
+
+1. After Effects를 켜고
+2. 프로젝트/컴프를 열고
+3. 이미지 또는 영상 레퍼런스를 Codex에 첨부한 뒤
+4. “이 레퍼런스처럼 구현해”
+
+라고 말하는 것만으로 Codex가 실제 After Effects 프로젝트를 직접 조작할 수 있어야 한다.
+
+특히 다음 기능이 중요하다:
+
+- inspect-comp
+- inspect-layer
+- see-frame
+- contact-sheet
+- match-reference
+- execute-script
+- camera / 3D layer control
+- masks
+- effects
+- keyframes
+- expressions
+- batch property editing
+
+레퍼런스 이미지를 보고 AE 결과를 실제 렌더한 뒤 비교하고 수정하는 workflow가 가능해야 한다.
+
+
+==================================================
+중요: 실행 우선
+==================================================
+
+이 작업의 목적은 repository 연구가 아니다.
+
+README 전체 분석,
+source code 전체 탐색,
+issues 조사,
+불필요한 GitHub 검색을 하지 마.
+
+설치와 연결에 필요한 부분만 확인하고 바로 실행한다.
+
+RESEARCH
+→ RESEARCH
+→ PLAN
+→ PLAN
+
+하지 말고
+
+CHECK
+→ INSTALL
+→ CONFIGURE
+→ VERIFY
+
+순서로 진행한다.
+
+
+==================================================
+STEP 1 — 현재 환경 확인
+==================================================
+
+먼저 터미널에서 최소한으로 확인:
+
+- Windows 버전
+- git 설치 여부
+- Node.js 설치 여부 및 버전
+- npm 사용 가능 여부
+- Codex CLI / Codex local configuration 위치
+- Adobe After Effects 설치 여부
+
+필요 조건은 해당 MCP repository의 현재 공식 설치 지침을 기준으로 확인한다.
+
+Node가 없거나 버전이 요구사항보다 낮으면
+안전한 공식 설치 방법을 사용해서 설치/업데이트한다.
+
+Git이 없다면 Git도 설치한다.
+
+이미 정상 설치된 프로그램은 다시 설치하지 않는다.
+
+환경 확인에 오래 머물지 않는다.
+
+
+==================================================
+STEP 2 — After Effects MCP 설치
+==================================================
+
+공식 repository:
+
+https://github.com/a-y-ibrahim/after-effects-mcp
+
+를 사용한다.
+
+사용자 홈 아래 관리하기 쉬운 고정 위치에 설치해라.
+
+예:
+
+%USERPROFILE%\Tools\after-effects-mcp
+
+단, 이미 같은 repository가 설치돼 있다면
+중복 clone하지 말고 기존 설치 상태를 검증한 후 최신 상태를 사용한다.
+
+필요하다면 다음 작업을 직접 수행한다:
+
+git clone
+npm install
+npm run build
+npm run install-bridge
+
+repository의 최신 공식 설치 방법이 위 명령과 달라졌다면
+현재 README/package.json의 실제 명령을 우선한다.
+
+설치 실패 시 오류를 읽고 바로 수정한다.
+
+같은 실패를 의미 없이 반복하지 않는다.
+
+
+==================================================
+STEP 3 — After Effects Bridge 설치 확인
+==================================================
+
+After Effects용 ScriptUI bridge가
+정확한 ScriptUI Panels 위치에 설치됐는지 파일 시스템에서 확인한다.
+
+설치된 bridge와 MCP server가 같은 repository 버전에 맞는지 확인한다.
+
+필요하면:
+
+npm run build
+npm run install-bridge
+
+를 다시 수행한다.
+
+원본 AE 설치 파일이나 사용자 프로젝트를 수정하지 않는다.
+
+
+==================================================
+STEP 4 — Codex MCP 등록
+==================================================
+
+이 MCP를 현재 로컬 Codex에 등록해라.
+
+우선 현재 설치된 Codex에서 지원하는 명령을 확인하기 위해
+필요한 경우에만 다음처럼 로컬 help를 확인한다:
+
+codex mcp --help
+
+불필요한 인터넷 검색은 하지 않는다.
+
+가능하면 Codex의 MCP 관리 명령을 사용하고,
+그 방식이 적절하지 않으면:
+
+~/.codex/config.toml
+
+또는 현재 Codex가 실제 사용 중인 config.toml을 수정한다.
+
+기존 Codex 설정을 절대 통째로 덮어쓰지 않는다.
+기존 설정을 보존한 채 After Effects MCP 항목만 추가한다.
+
+MCP server는 clone/build된 repository의
+실제 absolute path를 사용한다.
+
+개념적으로는 다음과 같은 stdio server가 등록되어야 한다:
+
+[mcp_servers.after-effects]
+command = "node"
+args = ["<ABSOLUTE_PATH_TO_AFTER_EFFECTS_MCP>/build/index.js"]
+enabled = true
+
+하지만 현재 Codex의 실제 config schema가 다르다면
+현재 Codex가 요구하는 올바른 schema를 사용한다.
+
+추측해서 config를 망가뜨리지 않는다.
+
+등록 후 가능하면:
+
+codex mcp list
+
+등 현재 버전이 제공하는 방법으로 등록 여부를 확인한다.
+
+
+==================================================
+STEP 5 — Codex 작업 규칙 생성
+==================================================
+
+앞으로 AE 작업을 맡겼을 때
+Codex가 토큰을 잔뜩 사용하며 조사만 하다가 늦게 실행하는 것을 방지하고 싶다.
+
+내 AE 작업용 workspace를 만들고
+그 루트에 AGENTS.md를 생성해라.
+
+예:
+
+%USERPROFILE%\Documents\AE_CODEX_WORKSPACE
+
+폴더가 없다면 생성한다.
+
+그 안에:
+
+AGENTS.md
+
+를 생성한다.
+
+AGENTS.md에는 아래 실행 정책을 넣어라.
+
+
+---------------- AGENTS.md CONTENT ----------------
+
+# AFTER EFFECTS CODEX EXECUTION POLICY
+
+You control Adobe After Effects through the configured After Effects MCP.
+
+Your priority is EXECUTION, not research.
+
+## CORE LOOP
+
+Always prefer:
+
+CONNECT
+→ ROUGH BUILD
+→ SEE
+→ COMPARE
+→ FIX
+→ POLISH
+
+Never spend a large portion of the task on:
+
+RESEARCH
+→ PLAN
+→ MORE RESEARCH
+→ IMPLEMENT LATE
+
+
+## STARTUP
+
+For every After Effects task:
+
+1. Check the AE bridge.
+2. Inspect only the active composition and minimum required layers.
+3. Immediately start building a visible rough result.
+
+Initial diagnostics should normally require no more than:
+- bridge check
+- active comp inspection
+- one additional inspection if necessary
+
+
+## FAILURE BUDGET
+
+If an operation fails:
+
+First failure:
+- inspect the actual error
+- correct the parameters
+- retry once
+
+If the same method fails twice:
+STOP repeating it.
+
+Switch implementation strategy immediately.
+
+Preferred fallback order:
+
+1. dedicated MCP operation
+2. batch MCP operation
+3. execute-script / ExtendScript / JSX
+
+Do not research an AE execution problem for an extended period.
+
+If ExtendScript can solve it directly, use it.
+
+
+## SCRIPTING
+
+execute-script / JSX is a normal implementation method.
+
+Use it when useful for:
+
+- compositions
+- precomps
+- 3D layers
+- cameras
+- nulls
+- parenting
+- masks
+- track mattes
+- shape layers
+- solids
+- effects
+- expressions
+- bulk keyframes
+- project organization
+- complex property editing
+
+Prefer one clean script or batch operation over dozens of tiny repetitive calls.
+
+
+## VISUAL REFERENCE MODE
+
+When the user supplies an image or video reference:
+
+The reference is a VISUAL TARGET.
+
+Do not only describe it.
+
+Analyze only what is necessary:
+
+- composition
+- perspective
+- camera angle
+- focal feeling
+- relative scale
+- X/Y positioning
+- Z-depth
+- overlap
+- spacing
+- typography
+- stroke thickness
+- motion language
+- visual hierarchy
+
+Then immediately build a rough AE version.
+
+
+## VISUAL VERIFICATION
+
+Tool success does not mean visual success.
+
+Use available visual tools such as:
+
+- see-frame
+- contact-sheet
+- match-reference
+
+Required workflow:
+
+BUILD
+→ SEE
+→ COMPARE
+→ IDENTIFY BIGGEST DIFFERENCE
+→ FIX
+→ SEE AGAIN
+
+Do not stop at the first approximation.
+
+
+## REFERENCE MATCH PRIORITY
+
+Correct mismatches in this order:
+
+PASS 1
+macro composition and layout
+
+PASS 2
+camera, perspective and depth
+
+PASS 3
+scale, spacing and overlap
+
+PASS 4
+motion, timing and easing
+
+PASS 5
+outlines, graphics, effects and polish
+
+Do not polish details while the main composition is wrong.
+
+
+## BREAKDOWN MODE
+
+When asked for a VFX/compositing breakdown, support both:
+
+### LAYER BREAKDOWN
+
+Examples:
+
+- floating compositing planes
+- exploded layer view
+- stacked cards
+- 2.5D depth
+- layer separation
+- layers recombining into final composite
+
+### PROCESS BREAKDOWN
+
+Examples:
+
+ORIGINAL
+→ ALPHA
+→ ROTO
+→ SOLID / MASK / CLEANUP
+→ FX / COMP
+→ FINAL
+
+This should look like a premium studio VFX case study,
+not a simple slideshow.
+
+Possible visual language:
+
+- dark presentation environment
+- thin frame outlines
+- clean typography
+- technical graphic elements
+- 2.5D planes
+- subtle camera parallax
+- sequential reveals
+- satisfying final composite resolve
+
+Always prioritize the supplied visual reference over these defaults.
+
+
+## SOURCE PROTECTION
+
+Never destructively alter irreplaceable source footage or original comps.
+
+Prefer:
+
+- duplicate
+- precompose
+- new master comp
+- null/controller layers
+- non-destructive effects
+
+Maintain editability.
+
+
+## COMMUNICATION
+
+While executing:
+do not send long progress essays.
+
+Do not repeatedly explain what you are about to do.
+
+Use the available context and tools to work.
+
+Only ask the user when a genuine blocker cannot reasonably be inferred.
+
+
+## COMPLETION
+
+A task is complete only when:
+
+1. the requested AE composition actually exists
+2. the visual design is present
+3. the result was visually checked
+4. a supplied reference was actually compared when possible
+5. obvious mismatches were corrected
+6. animation was checked across multiple frames
+7. project structure remains editable
+
+---------------- END AGENTS.md ----------------
+
+
+==================================================
+STEP 6 — Breakdown Skill 파일 생성
+==================================================
+
+같은 workspace에:
+
+AFTER_EFFECTS_BREAKDOWN_SKILL.md
+
+도 생성한다.
+
+이 문서는 이후 레퍼런스 기반 breakdown 작업의
+디자인 지침으로 사용한다.
+
+최소한 다음 모드를 명시한다:
+
+MODE A — LAYER BREAKDOWN
+
+- 2.5D floating planes
+- exploded compositing layers
+- thin frame outlines
+- controlled Z spacing
+- camera parallax
+- layer spread
+- final reassembly
+
+MODE B — PROCESS BREAKDOWN
+
+ORIGINAL
+→ ALPHA
+→ ROTO
+→ SOLID / MASK / CLEANUP
+→ FX
+→ FINAL COMPOSITE
+
+MODE C — BEFORE / AFTER HYBRID
+
+- before
+- intermediate process
+- after
+- optional split/wipe
+- optional exploded layers
+
+디자인 우선순위:
+
+1. source preservation
+2. process readability
+3. visual reference similarity
+4. motion quality
+5. presentation polish
+
+기본 스타일은:
+
+premium
+cinematic
+technical
+clean
+professional VFX case-study presentation
+
+으로 설정한다.
+
+cheap template,
+random glitch,
+excessive rotation,
+PowerPoint-like slideshow,
+unnecessary flashy transitions
+
+는 피하도록 명시한다.
+
+
+==================================================
+STEP 7 — 설치 상태 검증
+==================================================
+
+터미널에서 검증할 수 있는 것은 네가 직접 전부 검증해라.
+
+확인할 것:
+
+- repository 존재
+- node_modules 정상
+- build/index.js 존재
+- bridge JSX 설치됨
+- Codex MCP config에 server 등록됨
+- config syntax가 유효함
+- AGENTS.md 생성됨
+- AFTER_EFFECTS_BREAKDOWN_SKILL.md 생성됨
+
+가능한 자동 테스트가 repository에 있다면
+관련된 최소 테스트만 실행한다.
+
+전체 개발자 test suite를 불필요하게 오래 돌리지는 않는다.
+
+
+==================================================
+STEP 8 — After Effects GUI에서 반드시 사람 손이 필요한 것만 구분
+==================================================
+
+가능한 작업은 전부 네가 처리해라.
+
+단, After Effects GUI에서 보안상/기술상
+내가 직접 클릭해야만 하는 작업은
+억지로 우회하려 하지 않는다.
+
+대표적으로 필요한 경우:
+
+After Effects
+→ Edit
+→ Preferences
+→ Scripting & Expressions
+→ Allow Scripts to Write Files and Access Network
+
+그리고:
+
+Window
+→ mcp-bridge-auto.jsx
+
+가 필요할 수 있다.
+
+네가 직접 GUI를 제어할 수 있다면 수행해도 된다.
+
+GUI 제어가 불가능하다면
+설치가 전부 끝난 뒤에만 나에게 정확히 필요한 클릭을
+최소 단계로 알려줘.
+
+중간중간 나를 멈춰 세우지 마.
+
+
+==================================================
+STEP 9 — 중요한 세션 재시작 처리
+==================================================
+
+MCP server를 Codex config에 새로 추가한 경우
+현재 실행 중인 Codex 세션은 새 MCP tool을 즉시 로드하지 못할 수 있다.
+
+그 경우 이것을 오류로 착각하고 계속 헤매지 마.
+
+설치와 config 검증까지 완료한 뒤:
+
+"Codex 재시작 필요"
+
+라고 명확히 알려줘.
+
+재시작 후 사용할 작업 폴더 경로도 알려줘.
+
+AE 역시 bridge 설치 후 재시작이 필요한 경우
+한 번만 명확히 알려줘.
+
+
+==================================================
+STEP 10 — 재시작 이후 성공 판정
+==================================================
+
+MCP가 실제로 로드된 새 Codex 세션에서는:
+
+1. After Effects 실행 확인
+2. bridge check
+3. inspect active comp
+4. see-frame
+
+순서로 smoke test한다.
+
+가능하면 match-reference와 contact-sheet 도구도
+MCP tool 목록에 존재하는지 확인한다.
+
+bridgeVersion / versionMatch가 정상인지 확인한다.
+
+이 단계까지 정상이어야 setup 완료다.
+
+
+==================================================
+보안
+==================================================
+
+임의의 다른 repository나
+출처 불명의 installer를 사용하지 마.
+
+PRIMARY SOURCE는:
+
+https://github.com/a-y-ibrahim/after-effects-mcp
+
+이다.
+
+기존 사용자 파일,
+기존 AE 프로젝트,
+Codex config의 다른 설정을 삭제하지 않는다.
+
+rm -rf,
+디스크 포맷,
+대규모 삭제,
+registry의 불필요한 수정 등
+파괴적인 작업은 하지 않는다.
+
+필요한 dependency 설치와
+MCP/bridge 설정만 수행한다.
+
+
+==================================================
+최종 응답
+==================================================
+
+작업 도중 장문의 설명은 하지 말고 실제 작업을 진행해라.
+
+마지막에만 아주 짧게 아래 형식으로 보고해:
+
+AE MCP: 설치됨 / 기존 사용
+Bridge: 설치됨
+Codex MCP: 등록됨
+AGENTS.md: 생성됨
+Breakdown Skill: 생성됨
+자동 검증: 성공 / 실패
+AE 재시작 필요: YES / NO
+Codex 재시작 필요: YES / NO
+
+내가 직접 해야 하는 작업이 존재한다면
+그것만 번호로 최대 3단계 이내로 알려줘.
+
+지금 바로 시작해.
